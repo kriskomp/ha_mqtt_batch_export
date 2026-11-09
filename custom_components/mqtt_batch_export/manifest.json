@@ -1,0 +1,11 @@
+{
+  "domain": "mqtt_batch_export",
+  "name": "MQTT Batch Export",
+  "codeowners": ["@kriskomp"],
+  "documentation": "https://github.com/kriskomp/ha_mqtt_batch_export",
+  "issue_tracker": "https://github.com/kriskomp/ha_mqtt_batch_export/issues",
+  "integration_type": "service",
+  "iot_class": "local_push",
+  "requirements": ["paho-mqtt>=2.0.0"],
+  "version": "2026.11.09.1"
+}
