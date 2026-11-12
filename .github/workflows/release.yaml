@@ -1,0 +1,18 @@
+name: Release
+on:
+  push:
+    branches: [main]
+    paths: ["custom_components/**"]
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publish release for manifest version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          v=$(jq -r .version custom_components/mqtt_batch_export/manifest.json)
+          gh release view "$v" >/dev/null 2>&1 || gh release create "$v" --target "$GITHUB_SHA" --title "$v" --generate-notes

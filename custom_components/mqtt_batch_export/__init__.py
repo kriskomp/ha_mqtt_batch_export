@@ -23,6 +23,7 @@ from homeassistant.helpers.event import (
     async_track_time_interval,
 )
 from homeassistant.helpers.typing import ConfigType
+from homeassistant.loader import async_get_integration
 from homeassistant.util.yaml import Secrets, load_yaml_dict
 
 _LOGGER = logging.getLogger(__name__)
@@ -44,6 +45,13 @@ FILE_SCHEMA = vol.Schema(
             }
         ),
         vol.Optional("discovery_prefix", default="homeassistant"): cv.string,
+        vol.Optional("device", default=dict): vol.Schema(
+            {
+                vol.Optional("manufacturer"): cv.string,
+                vol.Optional("model"): cv.string,
+                vol.Optional("configuration_url"): cv.url,
+            }
+        ),
         vol.Required("groups"): {
             cv.string: vol.Schema(
                 {
@@ -69,7 +77,8 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         _LOGGER.error("Cannot load %s: %s", CONFIG_FILE, err)
         return False
 
-    exporter = Exporter(hass, cfg)
+    integration = await async_get_integration(hass, DOMAIN)
+    exporter = Exporter(hass, cfg, str(integration.version))
     if not exporter.interval_of:
         _LOGGER.warning("No sensor entities configured, nothing to export")
         return True
@@ -88,11 +97,21 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 class Exporter:
     """Publishes state of listed sensors as <alias>/<entity_id> (retained)."""
 
-    def __init__(self, hass: HomeAssistant, cfg: dict) -> None:
+    def __init__(self, hass: HomeAssistant, cfg: dict, version: str) -> None:
         self.hass = hass
         self.alias: str = cfg["alias"]
         self.prefix: str = cfg["discovery_prefix"]
         self.broker: dict = cfg["broker"]
+        dev = cfg["device"]
+        self.device: dict = {
+            "identifiers": [f"mqtt_batch_export_{self.alias}"],
+            "name": self.alias,
+            "manufacturer": dev.get("manufacturer", "MQTT Batch Export"),
+            "model": dev.get("model", f"HA {self.alias}"),
+            "sw_version": version,
+        }
+        if dev.get("configuration_url"):
+            self.device["configuration_url"] = dev["configuration_url"]
         self.interval_of: dict[str, int] = {}
         self.by_interval: dict[int, list[str]] = defaultdict(list)
         for group in cfg["groups"].values():
@@ -208,10 +227,7 @@ class Exporter:
             "unique_id": f"{self.alias}_{ent}",
             "default_entity_id": f"sensor.{self.alias}_{obj}",
             "state_topic": f"{self.alias}/{ent}",
-            "device": {
-                "identifiers": [f"mqtt_batch_export_{self.alias}"],
-                "name": self.alias,
-            },
+            "device": self.device,
         }
         for key in ("unit_of_measurement", "device_class", "state_class"):
             if a.get(key):
