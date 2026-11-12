@@ -23,4 +23,4 @@ groups:
 ```
 `sw_version` of the device is the integration version. Restart HA after changing the file.
 
-Not yet: other domains than `sensor`, attributes, CHANGELOG, tests.
+Not yet: other domains than `sensor`, attributes, availability/heartbeat, tests.
