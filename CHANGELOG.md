@@ -1,5 +1,8 @@
 # Changelog
 
+## 2026.11.17.1
+- Brand icon (`brand/icon.png`) and repo topics for HACS validation.
+
 ## 2026.11.12.1
 - Repo ready for HACS default list: validate (HACS + hassfest) and release workflows, manifest key order.
 
